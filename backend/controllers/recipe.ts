@@ -54,11 +54,10 @@ const getSingle = async (req: Request, res: Response) => {
 const create = async (req: Request, res: Response) => {
   const { title, ingredient, instruction, category } = req.body ?? {};
 
-  if (!title || !ingredient || !instruction || !category) {
-    throw new ApiError("All fields are required", 400);
-  }
-
   try {
+    if (!title || !ingredient || !instruction || !category) {
+      throw new ApiError("All fields are required", 400);
+    }
     // Get file URL if an image was uploaded
     const imageUrl = req.file ? `/images/${req.file.filename}` : null;
     const recipe = await recipeService.createSingle(
@@ -84,17 +83,16 @@ const update = async (req: Request, res: Response) => {
 
   const { id } = req.params;
 
-  if (!id) {
-    throw new ApiError("Recipe ID is required", 400);
-  }
-
-  const imageUrl = req.file ? `/images/${req.file.filename}` : null;
-
-  if (!title || !ingredient || !instruction || !category) {
-    throw new ApiError("All fields are required", 400);
-  }
-
   try {
+    if (!id) {
+      throw new ApiError("Recipe ID is required", 400);
+    }
+
+    const imageUrl = req.file ? `/images/${req.file.filename}` : null;
+
+    if (!title || !ingredient || !instruction || !category) {
+      throw new ApiError("All fields are required", 400);
+    }
     const recipe = await recipeService.updateSingle(
       id,
       title,
@@ -117,11 +115,10 @@ const update = async (req: Request, res: Response) => {
 const deleteSingle = async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  if (!id) {
-    throw new ApiError("Recipe ID is required", 400);
-  }
-
   try {
+    if (!id) {
+      throw new ApiError("Recipe ID is required", 400);
+    }
     const rows = await recipeService.deleteSingle(id, (req as any).user.userId);
     if ((rows as any).affectedRows === 0) {
       throw new ApiError("Recipe not found or unauthorized", 404);

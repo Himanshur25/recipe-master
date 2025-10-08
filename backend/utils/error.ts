@@ -4,12 +4,12 @@ export class ApiError extends Error {
   statusCode: number;
   isOperational: boolean;
 
-  constructor(message: string, statusCode = 500, isOperational = true) {
+  constructor(message: string, statusCode = 500, isOperational = false) {
     super(message); // Pass message to base Error class
     this.statusCode = statusCode; // HTTP status code
     this.isOperational = isOperational; // Distinguish expected vs unexpected errors
 
-    Error.captureStackTrace(this, this.constructor); // Clean stack trace
+    // Error.captureStackTrace(this, this.constructor); // Clean stack trace
   }
 }
 
