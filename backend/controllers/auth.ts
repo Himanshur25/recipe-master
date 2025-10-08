@@ -7,11 +7,10 @@ import { ApiError, serializeError } from "../utils/error";
 const register = async (req: Request, res: Response) => {
   const { name, email, password } = req.body ?? {};
 
-  if (!name || !email || !password) {
-    throw new ApiError("All fields are required", 400);
-  }
-
   try {
+    if (!name || !email || !password) {
+      throw new ApiError("All fields are required", 400);
+    }
     const result = await authService.register(name, email, password);
     const token = jwt.sign(
       {
@@ -44,10 +43,10 @@ const register = async (req: Request, res: Response) => {
 const login = async (req: Request, res: Response) => {
   const { email, password } = req.body ?? {};
 
-  if (!email || !password) {
-    throw new ApiError("All fields are required", 400);
-  }
   try {
+    if (!email || !password) {
+      throw new ApiError("All fields are required", 400);
+    }
     const user = await authService.login(email);
 
     if (!user) {
