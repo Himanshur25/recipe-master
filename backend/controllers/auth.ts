@@ -19,7 +19,7 @@ const register = async (req: Request, res: Response) => {
       },
       process.env.JWT_SECRET as string,
       {
-        expiresIn: "1w",
+        expiresIn: "1d",
       }
     );
 
@@ -34,7 +34,7 @@ const register = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     if (error.code === "ER_DUP_ENTRY") {
-      await serializeError(res, { ...error, message: "Email already exists" });
+      return await serializeError(res, { ...error, message: "Email already exists" });
     }
     await serializeError(res, error);
   }
@@ -63,7 +63,7 @@ const login = async (req: Request, res: Response) => {
 
     // 🔐 Create JWT token
     const token = jwt.sign(userPayload, process.env.JWT_SECRET as string, {
-      // expiresIn: "1d", // Token valid for 1 day
+      expiresIn: "1d", // Token valid for 1 day
     });
 
     res.cookie("token", token);

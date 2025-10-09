@@ -13,9 +13,11 @@ import { Button } from "./common/button";
 import { Input } from "./common/input";
 import { useLoginUser, useRegisterUser } from "../queryHooks/auth.query";
 import type { IUserPayload } from "../types/auth";
+import { useNavigate } from "react-router-dom";
 
 const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<IUserPayload>({
@@ -39,8 +41,12 @@ const AuthPage: React.FC = () => {
         password: formData.password,
       };
       mutateLoginUser(payload, {
-        onSuccess: () => {
-          // navigate to home page
+        onSuccess: (res) => {
+          localStorage.setItem("token", res.token);
+          navigate("/recipe");
+        },
+        onError: () => {
+          alert("Invalid Credentials");
         },
       });
     } else {
