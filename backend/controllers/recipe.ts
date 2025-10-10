@@ -1,6 +1,8 @@
 import { type Request, type Response } from "express";
 import { recipeService } from "../services/recipe";
 import { ApiError, serializeError } from "../utils/error";
+import { deleteFromS3, getKeyFromUrl } from "../utils/s3Client";
+import { handleFileUpload } from "../utils/files";
 
 const getAll = async (req: Request, res: Response) => {
   try {
@@ -58,8 +60,13 @@ const create = async (req: Request, res: Response) => {
     if (!title || !ingredient || !instruction || !category) {
       throw new ApiError("All fields are required", 400);
     }
-    // Get file URL if an image was uploaded
-    const imageUrl = req.file ? `/images/${req.file.filename}` : null;
+
+    let imageUrl: string | null = null;
+
+    if (req.file) {
+      imageUrl = await handleFileUpload(req.file);
+    }
+
     const recipe = await recipeService.createSingle(
       title,
       ingredient,
@@ -80,26 +87,42 @@ const create = async (req: Request, res: Response) => {
 
 const update = async (req: Request, res: Response) => {
   const { title, ingredient, instruction, category } = req.body;
-
   const { id } = req.params;
 
   try {
-    if (!id) {
-      throw new ApiError("Recipe ID is required", 400);
-    }
-
-    const imageUrl = req.file ? `/images/${req.file.filename}` : null;
-
+    if (!id) throw new ApiError("Recipe ID is required", 400);
     if (!title || !ingredient || !instruction || !category) {
       throw new ApiError("All fields are required", 400);
     }
+
+    const userId = (req as any).user.userId;
+
+    const existing = await recipeService.getSingle(Number(id), userId);
+    let imageUrl: string | null = null;
+
+    if (req.file) {
+      imageUrl = await handleFileUpload(req.file);
+
+      // delete old S3 object if exists
+      if (existing?.image) {
+        const oldKey = getKeyFromUrl(existing.image);
+        if (oldKey) {
+          try {
+            await deleteFromS3(oldKey);
+          } catch (e) {
+            console.warn("Failed to delete old s3 object", e);
+          }
+        }
+      }
+    }
+
     const recipe = await recipeService.updateSingle(
       id,
       title,
       ingredient,
       instruction,
       category,
-      (req as any).user.userId,
+      userId,
       imageUrl
     );
 
