@@ -5,6 +5,7 @@ import "./index.css";
 import GuestRoute from "./routes/GuestRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import NotFoundPage from "./ErrorPage";
+import AddRecipePage from "./components/AddRecipe";
 
 function App() {
   return (
@@ -29,6 +30,16 @@ function App() {
           element={
             <ProtectedRoute>
               <RecipeHomePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Add Recipe page route */}
+        <Route
+          path="/recipe/add"
+          element={
+            <ProtectedRoute>
+              <AddRecipePage />
             </ProtectedRoute>
           }
         />

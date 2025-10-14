@@ -3,7 +3,7 @@ import axios, { type AxiosInstance } from "axios";
 type apiLinksType = Record<string, string>;
 
 export const apiLinks: apiLinksType = {
-  auth: import.meta.env.VITE_BASE_URL,
+  baseUrl: import.meta.env.VITE_BASE_URL,
 };
 
 export const axiosPrivate: AxiosInstance = axios.create();
