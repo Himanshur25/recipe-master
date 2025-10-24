@@ -1,5 +1,8 @@
 export interface IRecipeResponse {
   recipes: Recipe[];
+  page: number;
+  limit: number;
+  total: number;
 }
 
 export interface Recipe {

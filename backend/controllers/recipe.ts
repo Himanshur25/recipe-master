@@ -14,7 +14,6 @@ const getAll = async (req: Request, res: Response) => {
     const values: any[] = [];
 
     // filtration based on query params and allowed columns only
-
     Object.entries(queryParams).forEach(([key, value]) => {
       if (allowedColumns.includes(key) && value) {
         if (key === "title") {
@@ -31,8 +30,23 @@ const getAll = async (req: Request, res: Response) => {
       }
     });
 
-    const recipes = await recipeService.getAll(filters, values, userId);
-    res.status(200).json({ recipes });
+    const page = parseInt(queryParams.page as string) || 1;
+    const limit = parseInt(queryParams.limit as string) || 8;
+    const offset = (page - 1) * limit;
+
+    const { total, rows: recipes } = await recipeService.getAll(
+      filters,
+      values,
+      userId,
+      limit,
+      offset
+    );
+    res.status(200).json({
+      page,
+      limit,
+      total,
+      recipes,
+    });
   } catch (error: any) {
     await serializeError(res, error);
   }
