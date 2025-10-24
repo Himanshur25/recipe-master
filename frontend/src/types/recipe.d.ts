@@ -12,4 +12,9 @@ export interface Recipe {
   ingredient: string;
   image: string;
   category: "veg" | "non-veg";
+  reaction: "like" | "dislike" | null;
+}
+export interface IRecipeReactionPayload {
+  recipeId: number;
+  reaction: "like" | "dislike";
 }

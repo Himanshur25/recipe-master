@@ -10,12 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "./common/card";
-import { useGetRecipes } from "../queryHooks/recipe.query";
+import { useGetRecipes, useSubmitRecipeReaction } from "../queryHooks/recipe.query";
 import Navbar from "./Navbar";
 import InfiniteScroll from "./hooks/InfiniteScroll";
 import { Loader } from "./common/spinner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const RecipeHomePage: React.FC = () => {
+  const queryClient = useQueryClient();
   const { data, isFetching, hasNextPage, isFetchingNextPage, isRefetching, fetchNextPage } =
     useGetRecipes();
 
@@ -23,12 +25,19 @@ const RecipeHomePage: React.FC = () => {
 
   const [expandedRecipe, setExpandedRecipe] = useState<number | null>(null);
 
-  const handleLike = (recipeId: number) => {
-    console.log("🚀 ~ handleLike ~ recipeId:", recipeId);
-  };
+  const { mutateAsync: mutateSubmitRecipeReaction, isPending: isLoadingRecipeReaction } =
+    useSubmitRecipeReaction();
 
-  const handleDislike = (recipeId: number) => {
-    console.log("🚀 ~ handleDislike ~ recipeId:", recipeId);
+  const handleReaction = (recipeId: number, reaction: "like" | "dislike") => {
+    mutateSubmitRecipeReaction(
+      { recipeId, reaction },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["recipes"] });
+          // Optionally, you can add any success handling logic here
+        },
+      }
+    );
   };
 
   const toggleRecipeDetails = (recipeId: number) => {
@@ -106,18 +115,28 @@ const RecipeHomePage: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleLike(recipe.recipe_id)}
-                          // className={recipe.isLiked ? "text-green-600" : ""}
+                          onClick={() => handleReaction(recipe.recipe_id, "like")}
                         >
-                          <ThumbsUp className={`w-4 h-4 mr-1 `} />
+                          {isLoadingRecipeReaction ? (
+                            <Loader />
+                          ) : (
+                            <ThumbsUp
+                              className={`w-4 h-4 mr-1  ${recipe.reaction === "like" ? "fill-current text-green-600" : "cursor-pointer"} `}
+                            />
+                          )}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDislike(recipe.recipe_id)}
-                          // className={recipe.isDisliked ? "text-red-600" : ""}
+                          onClick={() => handleReaction(recipe.recipe_id, "dislike")}
                         >
-                          <ThumbsDown className={`w-4 h-4 mr-1 fill-current`} />
+                          {isLoadingRecipeReaction ? (
+                            <Loader />
+                          ) : (
+                            <ThumbsDown
+                              className={`w-4 h-4 mr-1 ${recipe.reaction === "dislike" ? "fill-current text-red-600" : "cursor-pointer"} `}
+                            />
+                          )}
                         </Button>
                       </div>
                       <Button variant="ghost" size="sm">
