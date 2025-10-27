@@ -10,21 +10,34 @@ import {
   CardHeader,
   CardTitle,
 } from "./common/card";
-import { useGetRecipes } from "../queryHooks/recipe.query";
+import { useGetRecipes, useSubmitRecipeReaction } from "../queryHooks/recipe.query";
 import Navbar from "./Navbar";
+import InfiniteScroll from "./hooks/InfiniteScroll";
+import { Loader } from "./common/spinner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const RecipeHomePage: React.FC = () => {
-  const { data } = useGetRecipes();
-  console.log("🚀 ~ RecipeHomePage ~ data:", data?.recipes);
+  const queryClient = useQueryClient();
+  const { data, isFetching, hasNextPage, isFetchingNextPage, isRefetching, fetchNextPage } =
+    useGetRecipes();
+
+  const recipes = data?.pages.flatMap((page) => page.recipes) ?? [];
 
   const [expandedRecipe, setExpandedRecipe] = useState<number | null>(null);
 
-  const handleLike = (recipeId: number) => {
-    console.log("🚀 ~ handleLike ~ recipeId:", recipeId);
-  };
+  const { mutateAsync: mutateSubmitRecipeReaction, isPending: isLoadingRecipeReaction } =
+    useSubmitRecipeReaction();
 
-  const handleDislike = (recipeId: number) => {
-    console.log("🚀 ~ handleDislike ~ recipeId:", recipeId);
+  const handleReaction = (recipeId: number, reaction: "like" | "dislike") => {
+    mutateSubmitRecipeReaction(
+      { recipeId, reaction },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["recipes"] });
+          // Optionally, you can add any success handling logic here
+        },
+      }
+    );
   };
 
   const toggleRecipeDetails = (recipeId: number) => {
@@ -45,77 +58,103 @@ const RecipeHomePage: React.FC = () => {
         </div>
 
         {/* Recipe Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {data?.recipes.map((recipe) => (
-            <Card
-              key={recipe.recipe_id}
-              className="overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col"
+        {isFetching && !isRefetching && !isFetchingNextPage ? (
+          <div className="flex h-[70vh] items-center justify-center">
+            <Loader />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <InfiniteScroll
+              fetchNextPage={() => {
+                void fetchNextPage();
+              }}
+              hasNextPage={!!hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
             >
-              {/* Recipe Image */}
-              <div className="relative h-48 overflow-hidden flex-shrink-0">
-                <img
-                  src={recipe.image}
-                  alt={recipe.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute top-3 right-2">
-                  <span
-                    className={`bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold ${recipe.category === "veg" ? "text-green-500" : "text-red-500"}`}
-                  >
-                    {recipe.category}
-                  </span>
-                </div>
-              </div>
-
-              <CardHeader className="flex-shrink-0">
-                <CardTitle className="text-xl">{recipe.title}</CardTitle>
-                <CardDescription>{recipe.ingredient}</CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-4">{/* Expandable Details */}</CardContent>
-
-              <CardFooter className="flex flex-col space-y-3 mt-auto">
-                {/* View Details Button */}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => toggleRecipeDetails(recipe.recipe_id)}
+              {recipes.map((recipe) => (
+                <Card
+                  key={recipe.recipe_id}
+                  className="overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col"
                 >
-                  View Details
-                </Button>
-
-                {/* Like/Dislike Buttons */}
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleLike(recipe.recipe_id)}
-                      // className={recipe.isLiked ? "text-green-600" : ""}
-                    >
-                      <ThumbsUp className={`w-4 h-4 mr-1 `} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDislike(recipe.recipe_id)}
-                      // className={recipe.isDisliked ? "text-red-600" : ""}
-                    >
-                      <ThumbsDown className={`w-4 h-4 mr-1 fill-current`} />
-                    </Button>
+                  {/* Recipe Image */}
+                  <div className="relative h-48 overflow-hidden flex-shrink-0">
+                    <img
+                      src={recipe.image}
+                      alt={recipe.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute top-3 right-2">
+                      <span
+                        className={`bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold ${recipe.category === "veg" ? "text-green-500" : "text-red-500"}`}
+                      >
+                        {recipe.category}
+                      </span>
+                    </div>
                   </div>
-                  <Button variant="ghost" size="sm">
-                    <MessageSquare className="w-4 h-4 mr-1" />
-                    Comment
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+
+                  <CardHeader className="flex-shrink-0">
+                    <CardTitle className="text-xl">{recipe.title}</CardTitle>
+                    <CardDescription>{recipe.ingredient}</CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">{/* Expandable Details */}</CardContent>
+
+                  <CardFooter className="flex flex-col space-y-3 mt-auto">
+                    {/* View Details Button */}
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => toggleRecipeDetails(recipe.recipe_id)}
+                    >
+                      View Details
+                    </Button>
+
+                    {/* Like/Dislike Buttons */}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReaction(recipe.recipe_id, "like")}
+                        >
+                          {isLoadingRecipeReaction ? (
+                            <Loader />
+                          ) : (
+                            <ThumbsUp
+                              className={`w-4 h-4 mr-1  ${recipe.reaction === "like" ? "fill-current text-green-600" : "cursor-pointer"} `}
+                            />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReaction(recipe.recipe_id, "dislike")}
+                        >
+                          {isLoadingRecipeReaction ? (
+                            <Loader />
+                          ) : (
+                            <ThumbsDown
+                              className={`w-4 h-4 mr-1 ${recipe.reaction === "dislike" ? "fill-current text-red-600" : "cursor-pointer"} `}
+                            />
+                          )}
+                        </Button>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        Comment
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </InfiniteScroll>
+          </div>
+        )}
+
+        {isFetchingNextPage ? <Loader /> : null}
 
         {/* No Results */}
-        {data?.recipes.length === 0 && (
+        {recipes.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No recipes found. Try a different search!</p>
           </div>

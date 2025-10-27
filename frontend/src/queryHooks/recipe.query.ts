@@ -1,18 +1,36 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import type { ErrorResponse } from "../types/response";
 import type { AxiosError } from "axios";
-import { createRecipe, getRecipe } from "../apis/recipe";
-import type { IRecipeResponse } from "../types/recipe";
+import { createReactionOnRecipe, createRecipe, getRecipe } from "../apis/recipe";
+import type { IRecipeReactionPayload, IRecipeResponse } from "../types/recipe";
 
 export function useGetRecipes() {
-  return useQuery<IRecipeResponse, AxiosError<ErrorResponse>>({
-    queryKey: ["getRecipe"],
-    queryFn: async () => await getRecipe(),
+  return useInfiniteQuery<IRecipeResponse, AxiosError<ErrorResponse>>({
+    queryKey: ["recipes"],
+    initialPageParam: 1,
+
+    queryFn: async ({ pageParam = 1 }) => {
+      return await getRecipe(pageParam as number);
+    },
+
+    getNextPageParam: (lastPage) => {
+      const { page, limit, total } = lastPage;
+      const totalPages = Math.ceil(total / limit);
+      return page < totalPages ? page + 1 : undefined;
+    },
+
+    refetchOnWindowFocus: false,
   });
 }
 
 export function useCreateRecipe() {
   return useMutation<IRecipeResponse, AxiosError<ErrorResponse>, FormData>({
     mutationFn: async (payload: FormData) => await createRecipe(payload),
+  });
+}
+
+export function useSubmitRecipeReaction() {
+  return useMutation<IRecipeResponse, AxiosError<ErrorResponse>, IRecipeReactionPayload>({
+    mutationFn: async (payload: IRecipeReactionPayload) => await createReactionOnRecipe(payload),
   });
 }

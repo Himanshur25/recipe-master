@@ -1,9 +1,31 @@
 import { pool } from "../connect";
 
 // Get all recipes with reactions for a specific user
-const getAll = async (filters: any[], values: any[], userId: number) => {
-  let sql = `
-    SELECT 
+const getAll = async (
+  filters: string[],
+  values: any[],
+  userId: number,
+  limit: number,
+  offset: number
+) => {
+  // build the shared FROM+JOIN+WHERE part
+  let query = `
+    FROM recipe r
+    LEFT JOIN reactions re
+      ON r.id = re.recipe_id AND re.user_id = ?
+  `;
+
+  if (filters.length) {
+    query += " WHERE " + filters.join(" AND ");
+  }
+
+  const totalRecipes = `SELECT COUNT(DISTINCT r.id) AS total ${query}`;
+  const [countRows] = await pool.query(totalRecipes, [userId, ...values]);
+  const total = (countRows as any)[0]?.total ?? 0;
+
+  // 2) fetch paginated rows
+  const dataSql = `
+    SELECT
       r.id AS recipe_id,
       r.title,
       r.instruction,
@@ -14,19 +36,13 @@ const getAll = async (filters: any[], values: any[], userId: number) => {
       re.user_id AS reacted_user_id,
       re.created_at AS reaction_created_at,
       re.updated_at AS reaction_updated_at
-    FROM recipe r
-    LEFT JOIN reactions re 
-      ON r.id = re.recipe_id AND re.user_id = ?
+    ${query}
+    LIMIT ? OFFSET ?
   `;
 
-  // Only add WHERE if there are filters
-  if (filters.length) {
-    sql += " WHERE " + filters.join(" AND ");
-  }
+  const [rows] = await pool.query(dataSql, [userId, ...values, limit, offset]);
 
-  // Add userId first for LEFT JOIN, then rest for filters
-  const [rows] = await pool.query(sql, [userId, ...values]);
-  return rows;
+  return { total, rows };
 };
 
 // Get single recipe with reaction of a specific user
