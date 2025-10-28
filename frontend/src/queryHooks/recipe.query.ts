@@ -1,7 +1,13 @@
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import type { ErrorResponse } from "../types/response";
 import type { AxiosError } from "axios";
-import { createReactionOnRecipe, createRecipe, getRecipe, getRecipeById } from "../apis/recipe";
+import {
+  createReactionOnRecipe,
+  createRecipe,
+  deleteRecipe,
+  getRecipe,
+  getRecipeById,
+} from "../apis/recipe";
 import type { IRecipeReactionPayload, IRecipeResponse } from "../types/recipe";
 
 export function useGetRecipes() {
@@ -42,5 +48,14 @@ export const useGetRecipeById = (recipeId: number) => {
     enabled: !!recipeId,
     staleTime: 5 * 60 * 1000,
     retry: 2,
+  });
+};
+
+export const useDeleteRecipe = () => {
+  return useMutation({
+    mutationFn: (recipeId: number) => deleteRecipe(recipeId),
+    onError: (error) => {
+      console.error("Failed to delete recipe:", error);
+    },
   });
 };
