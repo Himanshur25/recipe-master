@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 import { ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 import { Button } from "./common/button";
@@ -15,15 +15,15 @@ import Navbar from "./Navbar";
 import InfiniteScroll from "./hooks/InfiniteScroll";
 import { Loader } from "./common/spinner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 const RecipeHomePage: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data, isFetching, hasNextPage, isFetchingNextPage, isRefetching, fetchNextPage } =
     useGetRecipes();
 
   const recipes = data?.pages.flatMap((page) => page.recipes) ?? [];
-
-  const [expandedRecipe, setExpandedRecipe] = useState<number | null>(null);
 
   const { mutateAsync: mutateSubmitRecipeReaction, isPending: isLoadingRecipeReaction } =
     useSubmitRecipeReaction();
@@ -38,10 +38,6 @@ const RecipeHomePage: React.FC = () => {
         },
       }
     );
-  };
-
-  const toggleRecipeDetails = (recipeId: number) => {
-    setExpandedRecipe(expandedRecipe === recipeId ? null : recipeId);
   };
 
   return (
@@ -104,7 +100,7 @@ const RecipeHomePage: React.FC = () => {
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => toggleRecipeDetails(recipe.recipe_id)}
+                      onClick={() => navigate(`/recipe/${recipe.recipe_id}`)}
                     >
                       View Details
                     </Button>

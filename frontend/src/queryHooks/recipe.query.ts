@@ -1,7 +1,7 @@
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import type { ErrorResponse } from "../types/response";
 import type { AxiosError } from "axios";
-import { createReactionOnRecipe, createRecipe, getRecipe } from "../apis/recipe";
+import { createReactionOnRecipe, createRecipe, getRecipe, getRecipeById } from "../apis/recipe";
 import type { IRecipeReactionPayload, IRecipeResponse } from "../types/recipe";
 
 export function useGetRecipes() {
@@ -34,3 +34,13 @@ export function useSubmitRecipeReaction() {
     mutationFn: async (payload: IRecipeReactionPayload) => await createReactionOnRecipe(payload),
   });
 }
+
+export const useGetRecipeById = (recipeId: number) => {
+  return useQuery({
+    queryKey: ["recipeById", recipeId],
+    queryFn: () => getRecipeById(recipeId),
+    enabled: !!recipeId,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
+};
