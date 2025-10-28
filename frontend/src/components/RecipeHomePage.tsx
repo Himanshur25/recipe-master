@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "./common/button";
 import {
   Card,
@@ -10,7 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "./common/card";
-import { useGetRecipes, useSubmitRecipeReaction } from "../queryHooks/recipe.query";
+import {
+  useGetRecipes,
+  useSubmitRecipeReaction,
+  useDeleteRecipe,
+} from "../queryHooks/recipe.query";
 import Navbar from "./Navbar";
 import InfiniteScroll from "./hooks/InfiniteScroll";
 import { Loader } from "./common/spinner";
@@ -28,16 +32,36 @@ const RecipeHomePage: React.FC = () => {
   const { mutateAsync: mutateSubmitRecipeReaction, isPending: isLoadingRecipeReaction } =
     useSubmitRecipeReaction();
 
+  const { mutateAsync: mutateDeleteRecipe, isPending: isDeletingRecipe } = useDeleteRecipe();
+
   const handleReaction = (recipeId: number, reaction: "like" | "dislike") => {
     mutateSubmitRecipeReaction(
       { recipeId, reaction },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["recipes"] });
-          // Optionally, you can add any success handling logic here
         },
       }
     );
+  };
+
+  const handleDeleteRecipe = (recipeId: number, recipeTitle: string) => {
+    // Confirmation dialog
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${recipeTitle}"? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    mutateDeleteRecipe(recipeId, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      },
+      onError: (error) => {
+        console.error("Error deleting recipe:", error);
+        alert("Failed to delete recipe. Please try again.");
+      },
+    });
   };
 
   const toggleRecipeDetails = (recipeId: number) => {
@@ -83,12 +107,23 @@ const RecipeHomePage: React.FC = () => {
                       alt={recipe.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute top-3 right-2">
+                    <div className="absolute top-3 left-2">
                       <span
                         className={`bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold ${recipe.category === "veg" ? "text-green-500" : "text-red-500"}`}
                       >
                         {recipe.category}
                       </span>
+                    </div>
+                    <div className="absolute top-3 right-3">
+                      {/* Delete Button - Top Left */}
+                      <button
+                        onClick={() => handleDeleteRecipe(recipe.recipe_id, recipe.title)}
+                        disabled={isDeletingRecipe}
+                        className="bg-red-500/90 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                        title="Delete recipe"
+                      >
+                        {isDeletingRecipe ? <Loader /> : <Trash2 className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 

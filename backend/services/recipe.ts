@@ -102,12 +102,8 @@ const updateSingle = async (
   return result;
 };
 
-const deleteSingle = async (id: string, userId: number) => {
-  const [result] = await pool.query("DELETE FROM recipe WHERE id = ? AND user_id = ?", [
-    id,
-    userId,
-  ]);
-
+const deleteSingle = async (id: string) => {
+  const [result] = await pool.query("DELETE FROM recipe WHERE id = ?", [id]);
   return result;
 };
 

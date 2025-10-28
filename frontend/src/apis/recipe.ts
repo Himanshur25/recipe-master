@@ -35,3 +35,14 @@ export const createReactionOnRecipe = async (payload: IRecipeReactionPayload) =>
   );
   return response.data;
 };
+
+export const deleteRecipe = async (recipeId: number): Promise<void> => {
+  const accessToken = localStorage.getItem("token");
+  const response = await axiosPrivate.delete(`${apiLinks.baseUrl}/recipes/${recipeId}`, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};

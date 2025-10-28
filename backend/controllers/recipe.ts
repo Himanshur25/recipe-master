@@ -156,7 +156,9 @@ const deleteSingle = async (req: Request, res: Response) => {
     if (!id) {
       throw new ApiError("Recipe ID is required", 400);
     }
-    const rows = await recipeService.deleteSingle(id, (req as any).user.userId);
+
+    const rows = await recipeService.deleteSingle(id);
+
     if ((rows as any).affectedRows === 0) {
       throw new ApiError("Recipe not found or unauthorized", 404);
     }
