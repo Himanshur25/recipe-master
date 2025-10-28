@@ -3,7 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChefHat, ThumbsUp, ThumbsDown, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "./common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./common/card";
-import { useGetRecipeById, useSubmitRecipeReaction } from "../queryHooks/recipe.query";
+import {
+  useDeleteRecipe,
+  useGetRecipeById,
+  useSubmitRecipeReaction,
+} from "../queryHooks/recipe.query";
 import { Loader } from "./common/spinner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,6 +17,8 @@ const RecipeDetailPage: React.FC = () => {
   const queryClient = useQueryClient();
 
   const { data: recipe, isLoading, isError, error } = useGetRecipeById(Number(recipeId));
+
+  const { mutateAsync: mutateDeleteRecipe, isPending: isDeletingRecipe } = useDeleteRecipe();
 
   const { mutateAsync: mutateSubmitRecipeReaction, isPending: isLoadingRecipeReaction } =
     useSubmitRecipeReaction();
@@ -28,6 +34,25 @@ const RecipeDetailPage: React.FC = () => {
         },
       }
     );
+  };
+
+  const handleDeleteRecipe = (recipeId: number, recipeTitle: string) => {
+    // Confirmation dialog
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${recipeTitle}"? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+    mutateDeleteRecipe(recipeId, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["recipes"] });
+        navigate("/recipe");
+      },
+      onError: (error) => {
+        console.error("Error deleting recipe:", error);
+        alert("Failed to delete recipe. Please try again.");
+      },
+    });
   };
 
   // Loading State
@@ -82,12 +107,12 @@ const RecipeDetailPage: React.FC = () => {
 
             <div className="flex items-center space-x-3">
               <Button
-                disabled
+                disabled={isDeletingRecipe}
+                onClick={() => handleDeleteRecipe(recipe.recipe_id, recipe.title)}
                 variant="outline"
                 className="border-red-500 text-red-600 hover:bg-red-50"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {/* {false ? <Loader /> : <Trash2 className="w-4 h-4 mr-2" />} */}
+                {isDeletingRecipe ? <Loader /> : <Trash2 className="w-4 h-4 mr-2" />}
                 Delete
               </Button>
             </div>
