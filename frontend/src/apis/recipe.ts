@@ -1,4 +1,4 @@
-import type { IRecipeReactionPayload, IRecipeResponse } from "../types/recipe";
+import type { IRecipeReactionPayload, IRecipeResponse, Recipe } from "../types/recipe";
 import { apiLinks, axiosPrivate } from "./api.config";
 
 export const getRecipe = async (page: number = 1): Promise<IRecipeResponse> => {
@@ -34,6 +34,16 @@ export const createReactionOnRecipe = async (payload: IRecipeReactionPayload) =>
     }
   );
   return response.data;
+};
+export const getRecipeById = async (recipeId: number): Promise<Recipe> => {
+  const accessToken = localStorage.getItem("token");
+  const response = await axiosPrivate.get(`${apiLinks.baseUrl}/recipes/${recipeId}`, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data.recipe;
 };
 
 export const deleteRecipe = async (recipeId: number): Promise<void> => {
