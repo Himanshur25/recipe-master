@@ -4,7 +4,16 @@ import "./index.css";
 import App from "./App";
 import { QueryClientProvider } from "@tanstack/react-query";
 import queryClient from "./queryClient";
+import { registerSW } from "virtual:pwa-register";
 
+registerSW({
+  onNeedRefresh() {
+    console.log("New content available; please refresh.");
+  },
+  onOfflineReady() {
+    console.log("App is ready to work offline.");
+  },
+});
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
